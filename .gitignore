@@ -1,0 +1,7 @@
+*.jpg
+test
+Backend/trocr-base.pt
+Backend/API
+Frontend
+Backend/IAM
+Backend/result

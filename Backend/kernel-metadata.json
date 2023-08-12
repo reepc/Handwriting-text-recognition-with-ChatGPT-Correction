@@ -1,0 +1,14 @@
+{
+  "id": "reeepc/Handwriting text recognition with ChatGPT correction",
+  "title": "HTRCC",
+  "code_file": "main.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
