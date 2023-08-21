@@ -12,7 +12,9 @@ The version here is which you can run the model locally (in your PC).
 ### Install anaconda
 
 > **Note**
-> This step is not necessary
+> This step is not necessary if you don't have any other environment of python in your computer.
+
+#### Windows
 
 ### Install python
 
