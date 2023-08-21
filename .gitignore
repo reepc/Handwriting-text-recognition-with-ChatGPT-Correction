@@ -5,3 +5,5 @@ Backend/API
 Frontend
 Backend/IAM
 Backend/result
+*.log
+*.json
