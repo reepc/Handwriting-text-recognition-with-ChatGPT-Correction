@@ -3,7 +3,7 @@
 This repo use [TrOCR model](https://github.com/microsoft/unilm/tree/master/trocr#trocr), which is from meta.
 You can see more details there.
 
-The online version will be upload to [NTUST NLPLab's website](https://nlp.csie.ntust.edu.tw/), which a laboratory in Taiwan. You can also find it by google.
+The online version will be upload to [NTUST NLPLab's website](https://nlp.csie.ntust.edu.tw/), which a laboratory in Taiwan.
 
 The version here is which you can run the model locally (in your PC).
 
@@ -11,7 +11,8 @@ The version here is which you can run the model locally (in your PC).
 
 ### Install anaconda
 
-* This step is not necessary.
+> **Note**
+> This step is not necessary
 
 ### Install python
 
