@@ -1,0 +1,15 @@
+fairseq==0.12.2
+tensorboard
+timm==0.5.4
+torch==2.0.1
+torchaudio==2.0.2
+torchensemble==0.1.9
+torchsummary==1.5.1
+torchvision==0.15.2
+tornado==6.3.2
+tqdm==4.64.1
+natsort
+nltk
+h5py
+numpy
+fastwer

@@ -1,9 +1,9 @@
 *.jpg
 test
-Backend/trocr-base.pt
-Backend/API
+trocr-base.pt
+API
 Frontend
-Backend/IAM
-Backend/result
+IAM
+result
 *.log
 *.json

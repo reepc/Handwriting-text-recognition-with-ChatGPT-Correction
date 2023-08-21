@@ -15,7 +15,15 @@ Or you can run in kaggle or colab, which are two cloud platforms.
 
 You can find the installing steps [here](https://docs.anaconda.com/free/anaconda/install/#)
 
-### Install python (without anaconda)
+#### Create anaconda environment (Same as Install Python)
+
+Open your anaconda prompt and type:
+```
+$ conda create -n HTC python=3.9.13
+```
+The name behind "-n" can defined by yourself.
+
+### Install Python (without anaconda)
 
 If you have python version below, you can skip this step.
 
@@ -29,11 +37,31 @@ If you still have errors because of python version, please install python 3.9.13
 
 #### Windows
 
-You can find python version [here](https://www.python.org/downloads/)
+You can find python versions [here](https://www.python.org/downloads/)
 Please click "Add python.exe to PATH" when installing.
 
 #### Linux
 
 ```
-$sudo apt-get intall python3.9.13
+$ sudo apt-get update 
+$ sudo apt-get upgrade
+$ sudo apt-get intall python3.9.13
 ```
+
+#### MacOS
+
+Also, find python versions [here](https://www.python.org/downloads/macos/)
+
+## Installation
+
+```
+$ git clone https://github.com/reepc/Handwriting-text-recognition-with-ChatGPT-Correction.git
+$ cd Handwriting-text-recognition-with-ChatGPT-Correction
+$ pip install -r requirements.txt
+```
+
+## Adapter training and evalution
+
+### Adapter training
+
+
