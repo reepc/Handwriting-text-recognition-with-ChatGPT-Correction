@@ -7,7 +7,9 @@ The online version will be upload to [NTUST NLPLab's website](https://nlp.csie.n
 
 The version here is which you can run the model locally (in your PC).
 If you want to run in your PC, you need a GPU which CUDA supports (Nvidia's GPU).
-Or you can run in kaggle or colab, which are two cloud platforms.
+Or you can run in kaggle or colab, they both have some free compute resource.
+
+You can train an adapter according to your font to increase model's accuracy.
 
 ## Prerequisites
 
@@ -63,5 +65,8 @@ $ pip install -r requirements.txt
 ## Adapter training and evalution
 
 ### Adapter training
+
+
+If you have any problem/question, feel free to contact with (guwanjun0530@outlook.com)[]
 
 
