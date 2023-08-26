@@ -45,7 +45,7 @@ Please click "Add python.exe to PATH" when installing.
 ```
 $ sudo apt-get update 
 $ sudo apt-get upgrade
-$ sudo apt-get intall python3.9.13
+$ sudo apt-get intall python=3.9.13
 ```
 
 #### MacOS
