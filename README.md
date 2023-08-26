@@ -17,11 +17,10 @@ You can find the installing steps [here](https://docs.anaconda.com/free/anaconda
 
 #### Create anaconda environment (Same as Install Python)
 
-Open your anaconda prompt and type:
+Open your anaconda prompt (Windows) or shell (Linux) and type:
 ```
-$ conda create -n HTC python=3.9.13
+$ conda create -n the_name_you_want python=3.9.13
 ```
-The name behind "-n" can defined by yourself.
 
 ### Install Python (without anaconda)
 
