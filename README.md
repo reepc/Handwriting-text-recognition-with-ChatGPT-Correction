@@ -67,6 +67,4 @@ $ pip install -r requirements.txt
 ### Adapter training
 
 
-If you have any problem/question, feel free to contact with (guwanjun0530@outlook.com)[]
-
-
+If you have any problem, question or want to share your using experience, feel free to contact with guwanjun0530@outlook.com
