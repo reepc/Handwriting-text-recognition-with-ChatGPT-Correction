@@ -37,6 +37,7 @@ If you still have errors because of python version, please install python 3.9.13
 #### Windows
 
 You can find python versions [here](https://www.python.org/downloads/)
+
 Please click "Add python.exe to PATH" when installing.
 
 #### Linux
