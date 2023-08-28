@@ -1,20 +1,26 @@
 from fairseq.models import FairseqEncoder, FairseqEncoderDecoderModel
-from fairseq.models.transformer import TransformerDecoder, Embedding, TransformerModel
+from fairseq.models.transformer import TransformerDecoder, Embedding
 from fairseq.data import Dictionary
+from fairseq.search import BeamSearch
 
 from timm.models.factory import create_model
 from register_model import *
 
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 
 import argparse, logging
+from tqdm.auto import tqdm
+
+from data_preprocess import STR
+
+from typing import List, Dict, Optional
 
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%',
-    handlers = [logging.FileHandler('my.log', 'w', 'utf-8'),]
+    datefmt='%Y-%m-%d %H:%M:%'
 )
 
 logger = logging.getLogger('Model Creating')
@@ -140,9 +146,59 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         self.adapter = adapter
     
     def forward(self, input):
-        output = self.encoder(input)
-        if self.adapter:
-            self.adapter(output)
+        encoder_out = self.encoder.forward(input)
+        
+        src_length = encoder_out['encoder_padding_mask'][0].eq(0).long()
+        src_tokens = encoder_out['encoder_padding_mask'][0]
+        
+        bsz, src_len = src_tokens.size()[:2]
+        
+        self.search.init_constraints(None, self.beam_size)
+        
+        max_len = min(self.max_decoder_positions() - 1, int(self.max_len_a * src_len + self.max_len_b))
+        
+        new_order = (torch.arange(bsz).view(-1, 1).repeat(1, self.beam_size).view(-1)).to(src_tokens.device).long()
+        encoder_out = self.encoder.reorder_encoder_out(encoder_out, new_order)
+        # encoder_out should be a list
+        assert encoder_out is not None
+        
+        scores = torch.zeros(bsz * self.beam_size, max_len + 1).to(src_tokens).float()
+        tokens = torch.zeros(bsz * self.beam_size, max_len + 2).to(src_tokens).long().fill_(self.pad)
+        tokens[:, 0] = self.eos
+        
+        incremental_states = torch.jit.annotate(
+            List[Dict[str, Dict[str, Optional[torch.Tensor]]]],
+            [torch.jit.annotate(Dict[str, Dict[str, Optional[torch.Tensor]]], {})]
+        )
+        
+        cands_to_ignore = torch.zeros(bsz, self.beam_size).to(src_tokens).eq(-1)
+        
+        sentences = torch.jit.annotate(
+            List[List[Dict[str, torch.Tensor]]],
+            [torch.jit.annotate(List[Dict[str, torch.Tensor]], []) for i in range(bsz)]
+        )
+        
+        finished = [False for i in range(bsz)]
+        bbsz = (torch.arange(0, bsz) * self.beam_size).unsqueeze(1).type_as(tokens).to(src_tokens.device)
+        
+        reorder_states: Optional[torch.Tensor] = None
+        batch_idx = Optional[torch.Tensor] = None
+        
+        for step in range(max_len + 1):
+            
+            if reorder_states is not None:
+                if batch_idx is not None:
+                    corr = batch_idx - torch.arange(batch_idx.numel()).type_as(batch_idx)
+                    reorder_states.view(-1, self.beam_size).add_(corr.unsqueeze(-1) * self.beam_size)
+                    original_batch_idx = original_batch_idx[batch_idx]
+
+                self.decoder.reorder_incremental_state(incremental_states, reorder_states)
+                encoder_out = self.encoder.reorder_encoder_out(encoder_out, reorder_states)
+            
+            if incremental_states is not None:
+                decoder_out = self.decoder.forward(tokens[:, : step + 1], encoder_out, incremental_states)
+            else:
+                decoder_out = self.decoder.forward(tokens[:, : step + 1], encoder_out)
         
 
 def create_TrOCR_model(state):
@@ -150,13 +206,28 @@ def create_TrOCR_model(state):
     
     encoder = Encoder(args=cfg['model'], dictionary=None)
     logger.info(f"Encoder:\n{encoder}")
+    encoder.load_state_dict(torch.load('./encoder.pt'))
     
     decoder = Decoder(args=cfg['model']).build_decoder()
     logger.info(f"Decoder:\n{decoder}")
+    decoder.load_state_dict(torch.load('./decoder.pt'))
     
     TrOCR = TrOCRModel(encoder=encoder, decoder=decoder)
+    
+    return TrOCR
+
+def test(state, device, image):
+    model = create_TrOCR_model(state).to(device)
+    model.eval()
+
+    for img in tqdm(image):
+        result = model(img.to(device))
+    return result
 
 
 if __name__ == '__main__':
     state = torch.load('./trocr-base.pt')
-    create_TrOCR_model(state)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    data_set = STR('./IAM/image/c04-110-00.jpg')
+    data = DataLoader(dataset=data_set, batch_size=1)
+    print(test(state, device, data))
