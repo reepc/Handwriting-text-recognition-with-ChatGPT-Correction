@@ -11,11 +11,15 @@ Or you can run in kaggle or colab, they both have some free compute resource.
 
 You can train an adapter according to your font to increase model's accuracy.
 
+The code here are ALL MODIFIED, deleted the code which are useless.
+
+So if you want to use other model, you need to modify the code.
+
 ## Prerequisites
 
 ### Anaconda (Not necessary)
 
-You can find the installing steps [here](https://docs.anaconda.com/free/anaconda/install/#)
+You can find the installing steps [here](https://docs.anaconda.com/free/anaconda/install/#).
 
 #### Create anaconda environment (Same as Install Python)
 
@@ -36,23 +40,7 @@ If you have python version below, you can skip this step.
 These python versions can install pytorch.
 If you still have errors because of python version, please install python 3.9.13, which is the author's python version when doing this repo.
 
-#### Windows
-
-You can find python versions [here](https://www.python.org/downloads/)
-
-Please click "Add python.exe to PATH" when installing.
-
-#### Linux
-
-```
-$ sudo apt-get update 
-$ sudo apt-get upgrade
-$ sudo apt-get intall python=3.9.13
-```
-
-#### MacOS
-
-Also, find python versions [here](https://www.python.org/downloads/macos/)
+To install python, please go to [official website](https://www.python.org/) to install according to your system.
 
 ## Installation
 
