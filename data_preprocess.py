@@ -1,6 +1,12 @@
-import torch, cv2
+import cv2
 import numpy as np
 import tempfile
+
+from torchvision import transforms
+from torchvision.transforms import functional
+from torchvision.utils import save_image
+from fairseq.data import FairseqDataset
+
 from PIL import Image
 
 class Image_preprocess:
@@ -28,3 +34,32 @@ class Image_preprocess:
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
         temp_file_name = temp_file.name
         resized_img.save(temp_file_name, dpi=(300, 300))
+
+class STR(FairseqDataset):
+    def __init__(self, img_path):
+        self.img_path = img_path
+        self.tfm = transforms.Compose([
+            transforms.Resize(size=(384,384), interpolation=functional.InterpolationMode.BICUBIC, max_size=None, antialias="warn"),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=0.5, std=0.5)
+        ])
+        
+    def __len__(self):
+        return 1
+    
+    def __getitem__(self, index):
+        img = Image.open(self.img_path).convert("RGB")
+        tfm_img = self.tfm(img)
+        
+        return tfm_img
+
+
+if __name__ == "__main__":
+    tfm = transforms.Compose([
+        transforms.Resize(size=(384,384), interpolation=functional.InterpolationMode.BICUBIC, max_size=None, antialias="warn"),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=0.5, std=0.5)
+    ])
+    
+    tfm_img = tfm(Image.open('./IAM/image/c04-110-00.jpg').convert('RGB'))
+    save_image(tfm_img, 'test.jpg')

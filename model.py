@@ -155,7 +155,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         self.adapter = adapter
         
         self.beam_size = beam_size
-        self.search = (BeamSearch(tgt_dictionary))
+        self.search = BeamSearch(tgt_dictionary)
         
         self.max_len_a = max_len_a
         self.max_len_b = max_len_b
