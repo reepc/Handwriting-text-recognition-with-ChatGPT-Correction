@@ -6,4 +6,5 @@ Frontend
 IAM
 result
 *.log
-*.json
+settings.json
+kernel-metadata.json
