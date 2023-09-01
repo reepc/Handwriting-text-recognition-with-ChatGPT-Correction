@@ -280,7 +280,6 @@ class TrOCRModel(FairseqEncoderDecoderModel):
                     finished,
                     self.beam_size,
                     attn,
-                    src_length,
                     max_len
                 )
                 remainings -= len(finals)
@@ -397,7 +396,6 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         finished: List[bool],
         beam_size: int,
         attn: Optional[torch.Tensor],
-        src_lengths,
         max_len: int,
     ):
         tokens_clone = tokens.index_select(0, bbsz_idx)[
@@ -476,6 +474,18 @@ class TrOCRModel(FairseqEncoderDecoderModel):
                 newly_finished.append(unique_unfin_idx)
 
         return newly_finished
+    
+    def is_finished(
+        self,
+        step,
+        unique_unfin_idx,
+        max_len,
+        finalize_sent_len,
+    ):
+        assert finalize_sent_len <= self.beam_size
+        if finalize_sent_len == self.beam_size or step == max_len:
+            return True
+        return False
         
         
         
