@@ -120,7 +120,7 @@ class Decoder:
     def build_embedding(self):
         logger.info("Building embedding...")
         embed_dim = self.args.decoder_embed_dim
-        dictionary = Dictionary.load('./IAM/gpt2_with_mask.dict.txt')
+        dictionary = Dictionary.load('/kaggle/working/gpt2_with_mask.dict.txt')
         
         num_embeddings = len(dictionary)
         padding = dictionary.pad()
@@ -143,7 +143,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         
     ):
         super().__init__(encoder, decoder)
-        tgt_dictionary = Dictionary.load('./IAM/gpt2_with_mask.dict.txt')
+        tgt_dictionary = Dictionary.load('/kaggle/working/gpt2_with_mask.dict.txt')
         self.tgt_dictionary = tgt_dictionary
         self.pad = tgt_dictionary.pad()
         self.eos = tgt_dictionary.eos()
