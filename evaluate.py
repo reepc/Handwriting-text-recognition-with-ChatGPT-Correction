@@ -40,5 +40,5 @@ def main(state, img_path):
 
 if __name__ == "__main__":
     img_path = '/kaggle/input/iam-handwriting/IAM/image/c04-110-00.jpg'
-    state = '/kaggle/input/trocr-base-model/trocr-base.pt'
+    state = torch.load('/kaggle/input/trocr-base-model/trocr-base.pt')
     print(main(state, img_path))
