@@ -24,7 +24,7 @@ def main(state, img_path):
     model.eval()
     
     for img in tqdm(data):
-        decoder_out = model.forward(img)
+        decoder_out = model.forward(img.to(device))
         
     decoder_out = decoder_out[0][0]
     
