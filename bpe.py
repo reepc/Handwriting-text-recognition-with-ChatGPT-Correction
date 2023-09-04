@@ -5,8 +5,8 @@ class GPT2BPE(object):
     """To process output tokens to words, or process words to tokens"""
     
     def __init__(self):
-        encoder_json = file_utils.cached_path('./bpe/gpt2_bpe_encoder.json')
-        vocab_bpe = file_utils.cached_path('./bpe/gpt2_vocab.bpe')
+        encoder_json = file_utils.cached_path('kaggle/working/HTRCC/bpe/gpt2_bpe_encoder.json')
+        vocab_bpe = file_utils.cached_path('kaggle/working/HTRCC/bpe/gpt2_vocab.bpe')
         self.bpe = get_encoder(encoder_json, vocab_bpe)
     
     def encode(self, x: str) -> str:
