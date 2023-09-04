@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-import argparse, logging, math
+import argparse, logging, math, sys
 from tqdm.auto import tqdm
 
 from data_preprocess import STR
@@ -144,6 +144,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
     ):
         super().__init__(encoder, decoder)
         tgt_dictionary = Dictionary.load('./IAM/gpt2_with_mask.dict.txt')
+        self.tgt_dictionary = tgt_dictionary
         self.pad = tgt_dictionary.pad()
         self.eos = tgt_dictionary.eos()
         self.unk = tgt_dictionary.unk()
@@ -155,7 +156,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         self.adapter = adapter
         
         self.beam_size = beam_size
-        self.search = BeamSearch(tgt_dictionary)
+        self.search = (BeamSearch(tgt_dictionary))
         
         self.max_len_a = max_len_a
         self.max_len_b = max_len_b
@@ -164,9 +165,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
     
     def forward(self, input):
         encoder_out = self.encoder.forward(input)
-        logger.info(self.pad)
-        logger.info(self.eos)
-        logger.info(self.vocab_size)
+
         if self.adapter is not None:
             encoder_out = self.adapter(encoder_out)
         
@@ -280,6 +279,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
                     finished,
                     self.beam_size,
                     attn,
+                    src_length,
                     max_len
                 )
                 remainings -= len(finals)
@@ -396,6 +396,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         finished: List[bool],
         beam_size: int,
         attn: Optional[torch.Tensor],
+        src_lengths,
         max_len: int,
     ):
         tokens_clone = tokens.index_select(0, bbsz_idx)[
@@ -474,18 +475,6 @@ class TrOCRModel(FairseqEncoderDecoderModel):
                 newly_finished.append(unique_unfin_idx)
 
         return newly_finished
-    
-    def is_finished(
-        self,
-        step,
-        unique_unfin_idx,
-        max_len,
-        finalize_sent_len,
-    ):
-        assert finalize_sent_len <= self.beam_size
-        if finalize_sent_len == self.beam_size or step == max_len:
-            return True
-        return False
         
         
         
@@ -513,6 +502,9 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         probs = probs[:, -1, :]
         
         return probs, attn
+    
+    def max_decoder_positions(self):
+        return min([self.encoder.max_positions()] + [sys.maxsize])
         
         
 def create_TrOCR_model(state):
@@ -531,7 +523,7 @@ def create_TrOCR_model(state):
     return TrOCR
 
 def test(state, device, image):
-    model = create_TrOCR_model(state).to(device)
+    model = create_TrOCR_model(state)
     model.eval()
 
     for img in tqdm(image):
