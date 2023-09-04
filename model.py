@@ -469,12 +469,23 @@ class TrOCRModel(FairseqEncoderDecoderModel):
             unique_unfin_idx: int = unique_s - (unique_sent << 32)
 
             if not finished[unique_sent] and self.is_finished(
-                step, unique_unfin_idx, max_len, len(finalized[unique_sent]), beam_size
+                step, max_len, len(finalized[unique_sent]),
             ):
                 finished[unique_sent] = True
                 newly_finished.append(unique_unfin_idx)
 
         return newly_finished
+    
+    def is_finished(
+        self,
+        step,
+        max_len,
+        finalized_sent_len
+    ):
+        assert finalized_sent_len <= self.beam_size
+        if finalized_sent_len == self.beam_size or step == max_len:
+            return True
+        return False
         
         
         
