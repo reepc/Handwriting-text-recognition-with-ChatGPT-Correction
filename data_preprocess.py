@@ -35,7 +35,7 @@ class Image_preprocess:
         temp_file_name = temp_file.name
         resized_img.save(temp_file_name, dpi=(300, 300))
 
-class STR(FairseqDataset):
+class STRDataset(FairseqDataset):
     def __init__(self, img_path):
         self.img_path = img_path
         self.tfm = transforms.Compose([
