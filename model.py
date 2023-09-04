@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 import argparse, logging, math, sys
 from tqdm.auto import tqdm
 
-from data_preprocess import STR
+from data_preprocess import STRDataset
 
 from typing import List, Dict, Optional
 
@@ -534,6 +534,6 @@ def test(state, device, image):
 if __name__ == '__main__':
     state = torch.load('./trocr-base.pt')
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    data_set = STR('./IAM/image/c04-110-00.jpg')
+    data_set = STRDataset('./IAM/image/c04-110-00.jpg')
     data = DataLoader(dataset=data_set, batch_size=1)
     print(test(state, device, data))
