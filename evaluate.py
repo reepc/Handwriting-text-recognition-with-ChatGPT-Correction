@@ -2,6 +2,8 @@ from fairseq import utils
 from torch.utils.data import DataLoader
 import torch
 
+from tqdm.auto import tqdm 
+
 try:
     from .model import create_TrOCR_model
     from .bpe import GPT2BPE
@@ -21,7 +23,9 @@ def main(state, img_path):
     model.to(device)
     model.eval()
     
-    decoder_out = model.forward(data)
+    for i in tqdm(data):
+        decoder_out = model.forward(data)
+        
     decoder_out = decoder_out[0][0]
     
     tokens, string, aligment = utils.post_process_prediction(
