@@ -1,4 +1,4 @@
-from tqdm.auto import tqdm 
+""" from tqdm.auto import tqdm 
 from torch.utils.data import DataLoader
 import pandas as pd
 
@@ -22,4 +22,9 @@ for i, data in enumerate(tqdm(datas)):
     img, label = data
     print(img, label)
     if i == 2:
-        break
+        break """
+
+import os
+root_path = '/home/reep_c/Handwriting text recognition with ChatGPT correction (Web Version)/Backend/IAM/image/'
+files = os.listdir(root_path)
+print(files)
