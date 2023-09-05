@@ -43,7 +43,6 @@ class Encoder(FairseqEncoder):
         logger.info("Encoder builded")
         
     def forward(self, img):
-        img = img.half()
         x, encoder_embedding = self.deit.forward_features(img)  # bs, n + 2, dim
         x = x.transpose(0, 1) # n + 2, bs, dim
 
