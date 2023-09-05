@@ -37,8 +37,8 @@ def main(state, img_path):
         decoder_out = model.forward(img.to(device))
         
     decoder_out = decoder_out[0][0]
-    logger.info(f'output: {decoder_out}')
-    logger.info(f'tokens: {decoder_out["tokens"]}')
+    print(f'output: {decoder_out}')
+    print(f'tokens: {decoder_out["tokens"]}')
     
     tokens, string, aligment = utils.post_process_prediction(
         hypo_tokens=decoder_out['tokens'].int().cpu(),
@@ -50,7 +50,7 @@ def main(state, img_path):
         extra_symbols_to_ignore={2}
     )
     
-    logger.info(string)
+    print(string)
     detok_str = bpe.decode(string)
     
     return detok_str
