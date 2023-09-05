@@ -57,9 +57,8 @@ def main(state, data):
             of.write(detok_str)
         
         scorer.add_string(detok_str, str(text[0]))
-        
     
-    return detok_str
+    print(scorer.result_string())
 
 if __name__ == "__main__":
     root_dir = '/kaggle/input/iam-handwriting/IAM/image/'
