@@ -535,7 +535,7 @@ def create_TrOCR_model(state):
 
 def test(state, device, image):
     model = create_TrOCR_model(state)
-    model.eval()
+    model.eval().to(device)
 
     for img in tqdm(image):
         result = model(img.to(device))
