@@ -348,7 +348,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
             tokens[:, : step + 1] = torch.index_select(
                 tokens[:, : step + 1], dim=0, index=active_bbsz_idx
             )
-            tokens.view(bsz, self.beam_size, -1)[:, :, step] = torch.gather(
+            tokens.view(bsz, self.beam_size, -1)[:, :, step + 1] = torch.gather(
                 cand_indices, dim=1, index=active_hypos
             )
             if step > 0:
