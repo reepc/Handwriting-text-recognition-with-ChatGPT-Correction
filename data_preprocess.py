@@ -5,7 +5,7 @@ import tempfile
 from torchvision import transforms
 from torchvision.transforms import functional
 from torchvision.utils import save_image
-from fairseq.data import FairseqDataset
+from torch.utils.data import Dataset
 
 from PIL import Image
 
@@ -35,9 +35,11 @@ class Image_preprocess:
         temp_file_name = temp_file.name
         resized_img.save(temp_file_name, dpi=(300, 300))
 
-class STRDataset(FairseqDataset):
-    def __init__(self, img_path):
-        self.img_path = img_path
+class STRDataset(Dataset):
+    def __init__(self, root_dir, df):
+        super().__init__()
+        self.root_dir = root_dir
+        self.df = df
         self.tfm = transforms.Compose([
             transforms.Resize(size=(384,384), interpolation=functional.InterpolationMode.BICUBIC, max_size=None, antialias="warn"),
             transforms.ToTensor(),
@@ -45,13 +47,16 @@ class STRDataset(FairseqDataset):
         ])
         
     def __len__(self):
-        return 1
+        return len(self.df)
     
     def __getitem__(self, index):
-        img = Image.open(self.img_path).convert("RGB")
-        tfm_img = self.tfm(img)
+        file_name = self.df['file_name'][index]
+        text = self.df['text'][index]
         
-        return tfm_img
+        image = Image.open(self.root_dir + file_name).convert('RGB')
+        tfm_img = self.tfm(image)
+        
+        return tfm_img, text
 
 
 if __name__ == "__main__":
