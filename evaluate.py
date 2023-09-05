@@ -12,7 +12,17 @@ except ImportError:
     from model import create_TrOCR_model
     from bpe import GPT2BPE
     from data_preprocess import STRDataset
-    
+
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%'
+)
+
+logger = logging.getLogger('Evaluating')
+
 def main(state, img_path):
     bpe = GPT2BPE()
     model = create_TrOCR_model(state)
@@ -27,6 +37,8 @@ def main(state, img_path):
         decoder_out = model.forward(img.to(device))
         
     decoder_out = decoder_out[0][0]
+    logger.info(f'output: {decoder_out}')
+    logger.info(f'tokens: {decoder_out["tokens"]}')
     
     tokens, string, aligment = utils.post_process_prediction(
         hypo_tokens=decoder_out['tokens'].int().cpu(),
@@ -38,6 +50,7 @@ def main(state, img_path):
         extra_symbols_to_ignore={2}
     )
     
+    logger.info(string)
     detok_str = bpe.decode(string)
     
     return detok_str
