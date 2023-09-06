@@ -54,7 +54,7 @@ def main(state, data):
         print(f"result: {detok_str}")
         
         with open('./result.txt', mode='a') as of:
-            of.write(detok_str, '\n')
+            of.write(f'{detok_str}\n')
         
         scorer.add_string(detok_str, str(text[0]))
     
