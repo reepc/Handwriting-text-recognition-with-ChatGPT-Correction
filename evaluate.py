@@ -31,7 +31,7 @@ def main(state, data):
     model = create_TrOCR_model(state)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    model.eval().to(device).half()
+    model.eval().to(device)
     
     scorer = CERScorer(cfg=None)
     for img, text in tqdm(data):
