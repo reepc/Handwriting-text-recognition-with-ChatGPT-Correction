@@ -50,10 +50,11 @@ def main(state, data):
         )
         
         detok_str = bpe.decode(string)
-        print(detok_str)
+        print()
+        print(f"result: {detok_str}")
         
         with open('./result.txt', mode='a') as of:
-            of.write(detok_str)
+            of.write(detok_str, '\n')
         
         scorer.add_string(detok_str, str(text[0]))
     

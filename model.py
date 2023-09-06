@@ -529,7 +529,7 @@ def create_TrOCR_model(state):
     logger.info(f"Decoder:\n{decoder}")
     decoder.load_state_dict(torch.load('./decoder.pt'))
     
-    TrOCR = TrOCRModel(encoder=encoder, decoder=decoder)
+    TrOCR = TrOCRModel(encoder=encoder, decoder=decoder, beam_size=10)
     
     return TrOCR
 
