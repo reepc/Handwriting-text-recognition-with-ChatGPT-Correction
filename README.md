@@ -60,8 +60,7 @@ $ pip install -r requirements.txt
 ```
 $ python3 main.py --adapter-path 
 ```
-
-If you have any problem, question or want to share your using experience, feel free to contact with guwanjun0530@outlook.com
+To be done...
 
 ## Reference
 
@@ -80,3 +79,6 @@ If you have any problem, question or want to share your using experience, feel f
 [Official repo on github](https://github.com/microsoft/unilm/tree/master/trocr#trocr)
 
 One of the type of adapter: [E2TIMT: Efficient and Effective Modal Adapter for Text Image Machine Translation](https://arxiv.org/abs/2305.05166)
+
+## Contact
+If you have any problem, question or want to share your using experience, feel free to contact with guwanjun0530@outlook.com
