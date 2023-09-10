@@ -3,7 +3,7 @@
 This repo use [TrOCR model](https://github.com/microsoft/unilm/tree/master/trocr#trocr), which is from meta.
 You can see more details there.
 
-The online version will be upload to [NTUST NLPLab's website](https://nlp.csie.ntust.edu.tw/).
+The online version in [NTUST NLPLab's website](https://nlp.csie.ntust.edu.tw/) (Haven't done yet).
 
 The version here is which you can run the model locally (in your PC).
 If you want to run in your PC, you need a GPU which CUDA supports (Nvidia's GPU).
