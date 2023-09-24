@@ -9,26 +9,31 @@ from register_model import *
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torch import Tensor
 
-import argparse, logging, math, sys
-from tqdm.auto import tqdm
-
-from data_preprocess import STRDataset
-
+import argparse, logging, math, sys, os, io
+import urllib.request
 from typing import List, Dict, Optional
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%'
-)
+from tqdm.auto import tqdm
 
-logger = logging.getLogger('Model Creating')
+from dataset import STRDataset
 
+def set_logger():
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    handler = logging.FileHandler(filename='./model.log', encoding='utf-8', mode='w')
+    formatter = logging.Formatter("%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    
+    return logger
+
+logger = set_logger()
 class Encoder(FairseqEncoder):
     def __init__(self, args, dictionary):
         super().__init__(dictionary)
-        logger.info('Building Encoder...')
+        logger.debug('Building Encoder...')
         
         if hasattr(args, 'only_keep_pretrained_encoder_structure') and args.only_keep_pretrained_encoder_structure:
             pretrained = False
@@ -40,8 +45,8 @@ class Encoder(FairseqEncoder):
         else:
             self.deit = create_model(args.deit_arch, pretrained=pretrained, ape=args.ape, mask_ratio=args.mask_ratio)
 
-        logger.info("Encoder builded")
-        
+        logger.debug("Encoder builded")
+    
     def forward(self, img):
         x, encoder_embedding = self.deit.forward_features(img)  # bs, n + 2, dim
         x = x.transpose(0, 1) # n + 2, bs, dim
@@ -72,10 +77,11 @@ class Encoder(FairseqEncoder):
         }
 
 class Decoder:
-    def __init__(self, args):
+    def __init__(self, args, tgt_dictionary: Dictionary):
         self.args = args
-    
-    def read_roberta_args(self, roberta_model):
+        self.tgt_dict = tgt_dictionary
+        
+    def read_roberta_args(self, roberta_model: argparse.Namespace):
         args = argparse.Namespace(**vars(roberta_model))
         attr_map = [
             ("encoder_attention_heads", "decoder_attention_heads"),
@@ -98,7 +104,7 @@ class Decoder:
         return args
     
     def build_decoder(self):
-        logger.info("Building decoder...")
+        logger.debug("Building decoder...")
         
         roberta = torch.hub.load('pytorch/fairseq:main', 'roberta.large')
         roberta.model.args.encoder_layers = 12
@@ -114,20 +120,19 @@ class Decoder:
             no_encoder_attn=False
         )
         
-        logger.info("Decoder builded")
+        logger.debug("Decoder builded")
         return decoder
     
     def build_embedding(self):
-        logger.info("Building embedding...")
+        logger.debug("Building embedding...")
         embed_dim = self.args.decoder_embed_dim
-        dictionary = Dictionary.load('/kaggle/working/gpt2_with_mask.dict.txt')
         
-        num_embeddings = len(dictionary)
-        padding = dictionary.pad()
+        num_embeddings = len(self.tgt_dict)
+        padding = self.tgt_dict.pad()
 
         embeddings = Embedding(num_embeddings=num_embeddings, embedding_dim=embed_dim, padding_idx=padding)
         
-        logger.info("Embedding builded")
+        logger.debug("Embedding builded")
         return embeddings
 
 class TrOCRModel(FairseqEncoderDecoderModel):
@@ -135,20 +140,20 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         self,
         encoder: FairseqEncoder,
         decoder: TransformerDecoder,
-        adapter = None,
+        adapter: nn.Module = None,
+        tgt_dictionary: Dictionary = None,
         beam_size: int = 5,
         max_len_a: float = 0.0,
-        max_len_b = 200,
+        max_len_b: int = 200,
         min_len: int = 1
         
     ):
         super().__init__(encoder, decoder)
-        tgt_dictionary = Dictionary.load('/kaggle/working/gpt2_with_mask.dict.txt')
         self.tgt_dictionary = tgt_dictionary
-        self.pad = tgt_dictionary.pad()
-        self.eos = tgt_dictionary.eos()
-        self.unk = tgt_dictionary.unk()
-        self.vocab_size = len(tgt_dictionary)
+        self.pad = self.tgt_dictionary.pad()
+        self.eos = self.tgt_dictionary.eos()
+        self.unk = self.tgt_dictionary.unk()
+        self.vocab_size = len(self.tgt_dictionary)
         
         self.unk_penalty = 0.0
         self.encoder = encoder
@@ -161,15 +166,19 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         self.max_len_a = max_len_a
         self.max_len_b = max_len_b
         self.min_len = min_len
-        self.temperature = 0.1
+        self.temperature = 1.0
     
     def forward(self, input):
-        encoder_out = self.encoder.forward(input)
+        encoder_out = self.encoder(input)
 
         if self.adapter is not None:
-            encoder_out = self.adapter(encoder_out)
+            if hasattr(self.adapter, 'encoder'):
+                encoder_out = self.adapter(encoder_out)
+            elif hasattr(self.adapter, 'transformer'):
+                for i in range(step):
+                    pass 
         
-        src_length = encoder_out['encoder_padding_mask'][0].eq(0).long()
+        src_length = encoder_out['encoder_padding_mask'][0].eq(0).long().sum(dim=1)
         src_tokens = encoder_out['encoder_padding_mask'][0]
         
         bsz, src_len = src_tokens.size()[:2]
@@ -188,15 +197,15 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         tokens[:, 0] = self.eos
         
         incremental_states = torch.jit.annotate(
-            List[Dict[str, Dict[str, Optional[torch.Tensor]]]],
-            [torch.jit.annotate(Dict[str, Dict[str, Optional[torch.Tensor]]], {})]
+            List[Dict[str, Dict[str, Optional[Tensor]]]],
+            [torch.jit.annotate(Dict[str, Dict[str, Optional[Tensor]]], {})]
         )
         
         cands_to_ignore = torch.zeros(bsz, self.beam_size).to(src_tokens).eq(-1)
         
         finalized = torch.jit.annotate(
-            List[List[Dict[str, torch.Tensor]]],
-            [torch.jit.annotate(List[Dict[str, torch.Tensor]], []) for i in range(bsz)]
+            List[List[Dict[str, Tensor]]],
+            [torch.jit.annotate(List[Dict[str, Tensor]], []) for i in range(bsz)]
         )
         
         finished = [False for i in range(bsz)]
@@ -205,14 +214,13 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         bbsz_offsets = (torch.arange(0, bsz) * self.beam_size).unsqueeze(1).type_as(tokens).to(src_tokens.device)
         cand_offsets = torch.arange(0, cand_size).type_as(tokens).to(src_tokens.device)
         
-        attn: Optional[torch.Tensor] = None
-        reorder_states: Optional[torch.Tensor] = None
-        batch_idx: Optional[torch.Tensor] = None
-        scores = torch.zeros(bsz * self.beam_size, max_len + 1).to(src_tokens).float()
+        attn: Optional[Tensor] = None
+        reorder_states: Optional[Tensor] = None
+        batch_idx: Optional[Tensor] = None
+        
         original_batch_idxs = torch.arange(0, bsz).type_as(tokens)
         
         for step in range(max_len + 1):
-            
             if reorder_states is not None:
                 if batch_idx is not None:
                     corr = batch_idx - torch.arange(batch_idx.numel()).type_as(batch_idx)
@@ -249,6 +257,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
             
             scores = scores.type_as(probs)
             eos_bbsz_idx = torch.empty(0).to(tokens)
+            eos_scores = torch.empty(0).to(scores)
             
             cand_scores, cand_indices, cand_beams = self.search.step(
                 step,
@@ -311,8 +320,6 @@ class TrOCRModel(FairseqEncoderDecoderModel):
                 cand_scores = cand_scores[batch_idxs]
                 cand_indices = cand_indices[batch_idxs]
 
-                if prefix_tokens is not None:
-                    prefix_tokens = prefix_tokens[batch_idxs]
                 src_lengths = src_lengths[batch_idxs]
                 cands_to_ignore = cands_to_ignore[batch_idxs]
 
@@ -379,7 +386,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
             _, sorted_scores_indices = torch.sort(scores, descending=True)
             finalized[sent] = [finalized[sent][ssi] for ssi in sorted_scores_indices]
             finalized[sent] = torch.jit.annotate(
-                List[Dict[str, torch.Tensor]], finalized[sent]
+                List[Dict[str, Tensor]], finalized[sent]
             )
             
         return finalized
@@ -392,13 +399,14 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         eos_scores,
         tokens,
         scores,
-        finalized: List[List[Dict[str, torch.Tensor]]],
+        finalized: List[List[Dict[str, Tensor]]],
         finished: List[bool],
         beam_size: int,
-        attn: Optional[torch.Tensor],
+        attn: Optional[Tensor],
         src_lengths,
         max_len: int,
     ):
+        assert bbsz_idx.numel() == eos_scores.numel()
         tokens_clone = tokens.index_select(0, bbsz_idx)[
             :, 1 : step + 2
         ]  # skip the first index, which is EOS
@@ -487,8 +495,6 @@ class TrOCRModel(FairseqEncoderDecoderModel):
             return True
         return False
         
-        
-        
     def decoder_forward(
         self,
         tokens,
@@ -498,7 +504,7 @@ class TrOCRModel(FairseqEncoderDecoderModel):
     ):
         probs = []
         
-        decoder_out = self.decoder.forward(tokens, encoder_out, incremental_state = incremental_state[0])
+        decoder_out = self.decoder(tokens, encoder_out, incremental_state = incremental_state[0])
         attn = decoder_out[1]['attn']
         attn = attn[0][:, -1, :]
         
@@ -518,33 +524,64 @@ class TrOCRModel(FairseqEncoderDecoderModel):
         return min([self.encoder.max_positions()] + [sys.maxsize])
         
         
-def create_TrOCR_model(state):
-    cfg = state['cfg']
-    
-    encoder = Encoder(args=cfg['model'], dictionary=None)
-    logger.info(f"Encoder:\n{encoder}")
+def create_TrOCR_model(model_args, tgt_dict, adapter, train: bool = False):
+    encoder = Encoder(args=model_args, dictionary=None)
+    logger.debug(f"Encoder:\n{encoder}")
     encoder.load_state_dict(torch.load('./encoder.pt'))
     
-    decoder = Decoder(args=cfg['model']).build_decoder()
-    logger.info(f"Decoder:\n{decoder}")
+    decoder = Decoder(args=model_args, tgt_dictionary=tgt_dict).build_decoder()
+    logger.debug(f"Decoder:\n{decoder}")
     decoder.load_state_dict(torch.load('./decoder.pt'))
     
-    TrOCR = TrOCRModel(encoder=encoder, decoder=decoder, beam_size=10)
+    if train:
+        adapter = None
+    
+    TrOCR = TrOCRModel(encoder=encoder, decoder=decoder, tgt_dictionary=tgt_dict)
     
     return TrOCR
 
-def test(state, device, image):
-    model = create_TrOCR_model(state)
-    model.eval().to(device)
-
-    for img in tqdm(image):
-        result = model(img.to(device))
-    return result
-
-
 if __name__ == '__main__':
-    state = torch.load('./trocr-base.pt')
+    try:
+        from .bpe import GPT2BPE
+    except ImportError:
+        from bpe import GPT2BPE
+    
+    from fairseq import utils
+        
+    dict_path_or_url = './gpt2_with_mask.dict.txt'
+    if dict_path_or_url is not None and dict_path_or_url.startswith('https') :
+        content = urllib.request.urlopen(dict_path_or_url).read().decode()
+        dict_file = io.StringIO(content)
+        tgt_dict = Dictionary.load(dict_file)
+    elif os.path.exists(dict_path_or_url):
+        content = io.StringIO(dict_path_or_url)
+        tgt_dict = Dictionary.load(dict_path_or_url)
+    else:
+        raise ValueError('Could not find tgt_dictionary.')
+
+    model_args = torch.load('./trocr-base.pt')['cfg']['model']
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     data_set = STRDataset('./IAM/image/c04-110-00.jpg')
     data = DataLoader(dataset=data_set, batch_size=1)
-    print(test(state, device, data))
+    
+    model = create_TrOCR_model(model_args, tgt_dict)
+    model.eval().to(device)
+    
+    with torch.no_grad():
+        for img in tqdm(data):
+            outs = model(img.to(device))
+    
+    outs = outs[0][0]
+    
+    bpe = GPT2BPE()
+    tokens, strs, alignment = utils.post_process_prediction(
+        hypo_tokens=outs['tokens'].int().cpu(),
+        src_str='',
+        alignment=outs['alignment'],
+        align_dict=None,
+        tgt_dict=model.tgt_dictionary,
+        remove_bpe=None,
+        extra_symbols_to_ignore={2}
+    )
+    
+    logger.info(bpe.decode(strs))

@@ -1,30 +1,27 @@
 from fairseq import utils
+from fairseq.data import Dictionary
+
 from torch.utils.data import DataLoader
 import torch
+
 import pandas as pd
 
-from tqdm.auto import tqdm 
+from tqdm.auto import tqdm
+import urllib.request
+import io, os
 
 try:
     from .model import create_TrOCR_model
     from .bpe import GPT2BPE
-    from .data_preprocess import STRDataset
+    from .dataset import STRDataset
     from .score import CERScorer
 except ImportError:
     from model import create_TrOCR_model
     from bpe import GPT2BPE
-    from data_preprocess import STRDataset
+    from dataset import STRDataset
     from score import CERScorer
 
 import logging
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%'
-)
-
-logger = logging.getLogger('Evaluating')
 
 def main(state, data):
     bpe = GPT2BPE()
@@ -61,6 +58,37 @@ def main(state, data):
     print(scorer.result_string())
 
 if __name__ == "__main__":
+    try:
+        from .bpe import GPT2BPE
+    except ImportError:
+        from bpe import GPT2BPE
+    
+    from fairseq import utils
+    
+    def set_logger():
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+        handler = logging.FileHandler(filename='./model.log', encoding='utf-8', mode='w')
+        formatter = logging.Formatter("%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        
+        return logger
+    
+    logger = set_logger()
+    
+        
+    dict_path_or_url = './IAM/gpt2_with_mask.dict.txt'
+    if dict_path_or_url is not None and dict_path_or_url.startswith('https') :
+        content = urllib.request.urlopen(dict_path_or_url).read().decode()
+        dict_file = io.StringIO(content)
+        tgt_dict = Dictionary.load(dict_file)
+    elif os.path.exists(dict_path_or_url):
+        content = io.StringIO(dict_path_or_url)
+        tgt_dict = Dictionary.load(dict_path_or_url)
+    else:
+        raise ValueError('Could not find tgt_dictionary.')
+    
     root_dir = '/kaggle/input/iam-handwriting/IAM/image/'
     df = pd.read_fwf('/kaggle/input/iam-handwriting/IAM/gt_test.txt', header=None)
     df.rename(columns={0: "file_name", 1: "text"}, inplace=True)
