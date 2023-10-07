@@ -1,21 +1,25 @@
 from argparse import ArgumentParser
+from tqdm.auto import tqdm
 import os, io
 
 import urllib.request
 
+from fairseq import utils
 from fairseq.data import Dictionary
+from torch.utils.data import DataLoader
 import torch
 
 try:
-    from .model import create_TrOCR_model
     from .bpe import GPT2BPE
     from .dataset import STRDataset
-    from .process import Preprocess, process_model
+    from .model import create_TrOCR_model
+    from .ChatGPT_correction import Correction
+    from .Preprocess.main import processing, process_model
 except ImportError:
-    from model import create_TrOCR_model
     from bpe import GPT2BPE
     from dataset import STRDataset
-    from process import Preprocess, process_model
+    from model import create_TrOCR_model
+    from Preprocess.main import processing, process_model
 
 def load_dict(dict_path_or_url):
     if dict_path_or_url is not None and dict_path_or_url.startswith('https') :
@@ -34,15 +38,50 @@ def main(args):
     if hasattr(args.model_path) and args.model_path is not None:
         process_model(args.model_path)
     
-    tgt_dict = load_dict()
+    tgt_dict = load_dict(args.tgt_dict)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model_args = torch.load('./state.pt')
-    model = create_TrOCR_model(model_args)
+    model = create_TrOCR_model(model_args, tgt_dict)
+    model.eval().to(device)
+    
+    processing(args.img_path)
+    dataset = STRDataset(img_dir='./splited')
+    data = DataLoader(dataset, shuffle=False)
+    
+    bpe = GPT2BPE()
+    doc_list = []
+    with torch.no_grad():
+        for img in tqdm(data):
+            outs = model(img.to(device))
+            outs = outs[0][0]
+            
+            tokens, strs, aligment = utils.post_process_prediction(
+                hypo_tokens=outs['tokens'].int().cpu(),
+                src_str='',
+                alignment=outs['alignment'],
+                align_dict=None,
+                tgt_dict=model.tgt_dictionary,
+                remove_bpe=None,
+                extra_symbols_to_ignore={2}
+            )
+            
+            doc_list.append(bpe.decode(strs))
+    
+    doc = '\n'.join(doc_list)
+    try:
+        corrected = Correction().curie_001(doc)
+        full_doc = corrected
+    except:
+        full_doc = doc
+    
+    with open(f'./result/{args.output_path}', mode='a') as out_file:
+        out_file.write(full_doc)
 
 def cli():
     parser = ArgumentParser()
-    parser.add_argument('--adapter-path', default=None, type=str, help='If using adapter or not.')
     parser.add_argument('--image-path', type=str, required=True, help='The image to inference.')
-    parser.add_argument('--output-path', default='./result', type=str, help='Path to store result.')
+    parser.add_argument('--prompt', type=str, help='The prompt that you want to sent to ChatGPT.')
+    parser.add_argument('--output-path', default='./result/output_doc.txt', type=str, help='Path to store result, must end with .txt.')
     parser.add_argument('--tgt-dict', default='./gpt2_with_mask.dict.txt', type=str, help='Target dictionary.')
     
     if not os.path.exists('./encoder.pt') and not os.path.exists('./decoder.pt'):

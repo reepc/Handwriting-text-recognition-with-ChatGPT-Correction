@@ -1,0 +1,6 @@
+{
+    "ChatGPT_API_Key":"Put your own ChatGPT API Key here.",
+    "prompt": {
+        "correct": "Please review and correct the following handwritten text. The text may contain errors such as missing or extra punctuation like # or \", spelling mistakes, or misinterpreted words. Please make necessary corrections and provide the most accurate version"
+    }
+}

@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+# TODO
 class TransformerAdapter(nn.Module):
     """
     A transformer adapter, using torch.nn.Module.

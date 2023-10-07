@@ -1,15 +1,14 @@
-from fairseq.data import FairseqDataset
+from torch.utils.data import Dataset
 from torchvision import transforms
-from torchvision.transforms import functional
-from torchvision.utils import save_image
 
 from PIL import Image
 
 import os
 
-class STRDataset(FairseqDataset):
-    def __init__(self):
+class STRDataset(Dataset):
+    def __init__(self, img_dir=None):
         self.images = os.listdir('./splited')
+        self.images.sort(key=lambda x:int(x[8:-4]))
         
         self.tfm = transforms.Compose([
             transforms.Resize(size=(384,384), interpolation=3),
@@ -25,3 +24,6 @@ class STRDataset(FairseqDataset):
         tfm_img = self.tfm(img)
         
         return tfm_img
+
+if __name__ == "__main__":
+    STRDataset()
