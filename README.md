@@ -82,3 +82,10 @@ One of the type of adapter: [E2TIMT: Efficient and Effective Modal Adapter for T
 
 ## Contact
 If you have any problem, question or want to share your using experience, feel free to contact with guwanjun0530@outlook.com
+
+## TODOs
+Change the decoder to a speech decoder and train it to make it generate speech.
+
+Improve line segmentation and ruling line removal.
+
+Make a Chinese version.
