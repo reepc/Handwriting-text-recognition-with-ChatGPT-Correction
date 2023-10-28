@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from tqdm.auto import tqdm
+import logging
 import os, io
 
 import urllib.request
@@ -20,6 +21,18 @@ except ImportError:
     from dataset import STRDataset
     from model import create_TrOCR_model
     from Preprocess.main import processing, process_model
+
+def set_logger():
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    handler = logging.FileHandler(filename='./model.log', encoding='utf-8', mode='w')
+    formatter = logging.Formatter("%(asctime)s %(name)-12s %(levelname)-8s %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    
+    return logger
+
+logger = set_logger()
 
 def load_dict(dict_path_or_url):
     if dict_path_or_url is not None and dict_path_or_url.startswith('https') :
@@ -69,18 +82,27 @@ def main(args):
     
     doc = '\n'.join(doc_list)
     try:
-        corrected = Correction().curie_001(doc)
-        full_doc = corrected
+        if args.prompt.endswith('.txt'):
+            with open(args.prompt, mode='r') as prompt_file:
+                prompt = prompt_file.readlines()
+                prompt = '\n'.join(prompt)
+        
+            corrected = Correction(prompt).correct(doc)
+        else:
+            corrected = Correction(args.prompt).correct(doc)
+            full_doc = corrected
     except:
         full_doc = doc
     
-    with open(f'./result/{args.output_path}', mode='a') as out_file:
+    with open(f'{args.output_path}', mode='a') as out_file:
         out_file.write(full_doc)
+    
+    logger.info(f"Recognized document: '\n' {full_doc}")
 
 def cli():
     parser = ArgumentParser()
     parser.add_argument('--image-path', type=str, required=True, help='The image to inference.')
-    parser.add_argument('--prompt', type=str, help='The prompt that you want to sent to ChatGPT.')
+    parser.add_argument('--prompt', type=str, help='The prompt that you want to sent to ChatGPT, can be a txt file or just type here.')
     parser.add_argument('--output-path', default='./result/output_doc.txt', type=str, help='Path to store result, must end with .txt.')
     parser.add_argument('--tgt-dict', default='./gpt2_with_mask.dict.txt', type=str, help='Target dictionary.')
     

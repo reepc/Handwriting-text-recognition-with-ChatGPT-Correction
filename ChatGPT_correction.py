@@ -5,7 +5,9 @@ with open('./ChatGPT_settings.json', mode='r') as jf:
     settings = json.load(jf)
 
 class Correction:
-    def __init__(self):
+    def __init__(self, prompt=None):
+        self.prompt = prompt
+        
         openai.api_key = settings['API_key']
         self.curie = "text-curie-001"
         self.davinci = 'text-davinci-003'
@@ -16,15 +18,19 @@ class Correction:
     
     def correct(self, doc):
         """
-        Like a postprocess.
+        Like a postprocess if using default prompt.
         """
+        if self.prompt is None:
+            prompt = settings['prompt']['correct'] + '\n' + doc
+        else:
+            prompt = self.prompt + '\n' + doc
+            
         response = openai.Completion.create(
             engine = self.curie,
-            prompt = settings['prompt']['correct'] + '\n' + doc,
+            prompt = prompt,
             temperature = 0.2,
             max_tokens = 1500
         )
-        print(response)
         corrected = response.choices[0].text
         with open('./result.txt', mode='w+') as result:
             result.write(corrected)

@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-# TODO
+# TODO: test if can increase accuracy based on every person's handwritten text
 class TransformerAdapter(nn.Module):
     """
     A transformer adapter, using torch.nn.Module.
@@ -15,6 +15,7 @@ class TransformerAdapter(nn.Module):
         )
     
     def forward(self, src, prev):
+        # TODO: done forward
         self.transformer(src)
         
 class TransformerEncoderAdapter(nn.Module):
