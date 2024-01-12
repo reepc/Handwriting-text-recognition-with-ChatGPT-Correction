@@ -9,7 +9,7 @@ The version here is which you can run the model locally (in your PC).
 If you want to run in your PC, you need a GPU which CUDA supports (Nvidia's GPU).
 Or you can run in kaggle or colab, they both have some free compute resource.
 
-You can train an adapter according to your font to increase model's accuracy.
+You can train an adapter according to your own font to increase model's accuracy.
 
 The code here are ALL MODIFIED, deleted the code which are useless.
 
@@ -54,10 +54,20 @@ $ cd Handwriting-text-recognition-with-ChatGPT-Correction
 $ pip install -r requirements.txt
 ```
 
+## Download and process Model
+
+```
+$ sh process_model.sh
+```
+
 ## RUN
 ```
-$ python generate.py --image-path
+$ python generate.py \
+      --image-path /path/to/your/image \
+      --prompt /path/to/prompt/or/enter/here \
+      --output-path /path/to/store/your/output
 ```
+--image-path is the only required argument in above arguments.
 
 ## Adapter training and evalution
 TODO
