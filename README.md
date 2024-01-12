@@ -54,13 +54,17 @@ $ cd Handwriting-text-recognition-with-ChatGPT-Correction
 $ pip install -r requirements.txt
 ```
 
-## Adapter training and evalution
+## RUN
+```
+$ python generate.py --image-path
+```
 
+## Adapter training and evalution
+TODO
 ### Adapter training
 ```
 $ python3 main.py --adapter-path 
 ```
-To be done...
 
 ## Reference
 
@@ -84,7 +88,9 @@ One of the type of adapter: [E2TIMT: Efficient and Effective Modal Adapter for T
 If you have any problem, question or want to share your using experience, feel free to contact with guwanjun0530@outlook.com
 
 ## TODOs
-Change the decoder to a speech decoder and train it to make it generate speech.
+Change the decoder to a speech decoder and train it to make it generate speech instead of text.
+
+Complete adapter.
 
 Improve line segmentation and ruling line removal.
 
