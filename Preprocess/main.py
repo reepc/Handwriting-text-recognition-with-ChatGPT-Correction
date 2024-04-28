@@ -1,15 +1,13 @@
-import torch
 
 import cv2
-import os
 
 try:
     from .Line_removal import Line_Removal
-    from .Preprocess import *
+    from .utils import unshadow, deskew
     from .Segmentation import segment_1
 except ImportError:
     from Line_removal import Line_Removal
-    from Preprocess import *
+    from utils import unshadow, deskew
     from Segmentation import segment_1
     
 def processing(img_path):
@@ -26,7 +24,7 @@ def processing(img_path):
         line_start, line_end = remover.find_lines(distance)
         removed_pixels = remover.line_iterator(line_start, line_end, window_start=3, window_end=6)
         gray = gray - removed_pixels
-    except:
+    except Exception:
         pass
     
     Segmentor = segment_1()

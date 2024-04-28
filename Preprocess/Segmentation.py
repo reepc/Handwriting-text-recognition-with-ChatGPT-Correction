@@ -5,9 +5,9 @@ from scipy.signal import argrelmin
 import math
 
 try:
-    from .Preprocess import *
+    from .utils import unshadow, deskew
 except ImportError:
-    from Preprocess import *
+    from utils import unshadow, deskew
 
 
 
@@ -18,10 +18,10 @@ class segment_1:
         Original paper: http://ciir.cs.umass.edu/pubfiles/mm-27.pdf.
         """
         transposed = np.transpose(gray)
+        window_size = self.compute_window_size(gray)
         kernel = self.create_kernel(9, 4, 1.5)
         filtered = cv2.filter2D(transposed, -1, kernel, borderType=cv2.BORDER_REPLICATE)
         
-        window_size = self.compute_window_size(gray)
         normalized = self.normalize(filtered)
         summ = np.sum(normalized, axis=0)
         smoothed = self.smooth(summ, window_size)
@@ -68,7 +68,7 @@ class segment_1:
             raise ValueError("Input vector needs to be bigger than window size.") 
         if window_len<3:
             return x
-        if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+        if window not in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
             raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'") 
         s = np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
         #print(len(s))
@@ -170,7 +170,6 @@ class Segment_3:
         # Sort blobs based on their y-coordinate for processing
         valid_bboxes.sort(key=lambda stat: stat[1])
 
-        aligned_boxes = []
         prev_y = 0
         print(len(valid_bboxes[0]))
         for box in valid_bboxes:
